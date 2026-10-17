@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "id": "kierangraham.oport",
+  "name": "oport",
+  "version": "0.1.0",
+  "author": "Kieran Graham",
+  "license": "MIT",
+  "description": "Every dev server on this machine: ports, projects, agent sessions, memory leaks and clean up",
+  "kinds": [
+    "service",
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "service": "plugin/Service.qml",
+    "barWidget": "plugin/BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "oport",
+    "description": "Dev servers on local ports, with leak warnings and one-click stop",
+    "category": "Development",
+    "aliases": [
+      "ports",
+      "dev servers",
+      "whattheport"
+    ],
+    "defaultSection": "right",
+    "allowMultiple": false,
+    "defaults": {
+      "showCount": true,
+      "hideWhenEmpty": false,
+      "memoryLimitMb": 2048,
+      "growthMb": 500,
+      "windowMinutes": 10,
+      "idleHours": 3,
+      "graceSeconds": 5,
+      "portMin": 1024,
+      "portMax": 32767,
+      "showAll": false,
+      "protected": "postgres, redis-server, valkey-server, mongod, mysqld, mariadbd, memcached, dockerd, rootlesskit, containerd",
+      "ignored": ""
+    },
+    "schema": [
+      { "key": "showCount", "type": "boolean", "label": "Server count beside the icon", "defaultValue": true },
+      { "key": "hideWhenEmpty", "type": "boolean", "label": "Hide when no servers are running", "defaultValue": false },
+      { "key": "memoryLimitMb", "type": "integer", "label": "Memory warning above (MB)", "min": 0, "max": 65536, "step": 256, "defaultValue": 2048, "description": "0 turns the absolute limit off." },
+      { "key": "growthMb", "type": "integer", "label": "Leak warning: growth (MB)", "min": 0, "max": 16384, "step": 100, "defaultValue": 500, "description": "Warn when a server grows this much within the leak window. 0 turns it off." },
+      { "key": "windowMinutes", "type": "integer", "label": "Leak window (minutes)", "min": 1, "max": 120, "step": 1, "defaultValue": 10 },
+      { "key": "idleHours", "type": "integer", "label": "Idle after (hours)", "min": 0, "max": 168, "step": 1, "defaultValue": 3, "description": "Hours without CPU use or connections before Clean up preselects a server. 0 turns idle detection off." },
+      { "key": "graceSeconds", "type": "integer", "label": "Force-quit after (seconds)", "min": 0, "max": 60, "step": 1, "defaultValue": 5 },
+      { "key": "portMin", "type": "integer", "label": "Lowest port", "min": 1, "max": 65535, "step": 1, "defaultValue": 1024 },
+      { "key": "portMax", "type": "integer", "label": "Highest port", "min": 1, "max": 65535, "step": 1, "defaultValue": 32767 },
+      { "key": "showAll", "type": "boolean", "label": "Include every listening process", "defaultValue": false, "description": "Not only processes that look like dev servers." },
+      { "key": "protected", "type": "string", "label": "Protected processes", "defaultValue": "postgres, redis-server, valkey-server, mongod, mysqld, mariadbd, memcached, dockerd, rootlesskit, containerd", "description": "Comma-separated process names that are never preselected and need confirmation to stop." },
+      { "key": "ignored", "type": "string", "label": "Ignored processes or projects", "defaultValue": "", "description": "Comma-separated names to leave out of the list." }
+    ]
+  }
+}

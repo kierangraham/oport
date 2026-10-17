@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Starts or stops a small `npm run dev` project on port 5199 for tests.
+set -euo pipefail
+demo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/output/demo
+case ${1:-} in
+start)
+  mkdir -p "$demo"
+  printf '%s\n' '{"name":"demo-web","scripts":{"dev":"python3 -m http.server 5199 --bind 127.0.0.1"}}' > "$demo/package.json"
+  (cd "$demo" && setsid npm run dev > "$demo/server.log" 2>&1 < /dev/null &)
+  for _ in $(seq 50); do
+    grep -q ":$(printf '%04X' 5199) .* 0A " /proc/net/tcp && exit 0
+    sleep 0.1
+  done
+  echo "demo server did not start" >&2
+  exit 1
+  ;;
+stop) pkill -f '[h]ttp.server 5199' || true ;;
+*) echo "usage: $0 start|stop" >&2; exit 2 ;;
+esac

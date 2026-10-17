@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+plugin_id=kierangraham.oport
+plugin_dir="${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/plugins/$plugin_id"
+shell_config="${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/shell.json"
+
+cd "$source_dir"
+cargo build --release --locked
+omarchy plugin validate "$source_dir"
+
+if [[ -e $plugin_dir && ! -f $plugin_dir/.oport-managed ]]; then
+  echo "Existing plugin directory was not installed by this script: $plugin_dir" >&2
+  exit 1
+fi
+install -Dm755 target/release/oport "$HOME/.local/bin/oport"
+# The directory belongs to this script, so clear files from earlier layouts.
+if [[ -d $plugin_dir ]]; then
+  find "$plugin_dir" -mindepth 1 -delete
+fi
+install -Dm644 manifest.json "$plugin_dir/manifest.json"
+for file in BarWidget.qml Service.qml PortGlyph.qml Sparkline.qml Model.js; do
+  install -Dm644 "plugin/$file" "$plugin_dir/plugin/$file"
+done
+touch "$plugin_dir/.oport-managed"
+
+if [[ -f $shell_config ]]; then
+  cp -a -- "$shell_config" "$shell_config.bak.oport.$(date +%Y%m%d-%H%M%S)"
+fi
+omarchy-shell shell rescanPlugins
+# The rescan completes asynchronously; wait until the shell knows the plugin.
+for _ in $(seq 50); do
+  omarchy-shell shell listPlugins | grep -q "\"$plugin_id\"" && break
+  sleep 0.1
+done
+omarchy plugin enable "$plugin_id"
+echo "Installed oport. Click the dot grid in the bar, or run oport in a terminal."

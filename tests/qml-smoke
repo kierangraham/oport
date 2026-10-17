@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Loads the plugin in a separate Quickshell against a real demo server and
+# drives every view. By default it runs on Wayland with every window hidden.
+# With --render it runs offscreen instead, substituting the layer-shell panel
+# with tests/shim, and saves PNG renders of each view to tests/output/.
+set -euo pipefail
+source_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+omarchy_path=${OMARCHY_PATH:-/usr/share/omarchy}
+smoke_dir=$(mktemp -d /tmp/oport-qml.XXXXXX)
+runtime=$(mktemp -d)
+"$source_dir/tests/demo-server" start
+trap '"$source_dir/tests/demo-server" stop; rm -rf -- "$smoke_dir" "$runtime"' EXIT
+ln -s -- "$omarchy_path/shell/Commons" "$smoke_dir/Commons"
+ln -s -- "$source_dir/plugin" "$smoke_dir/plugin"
+cp -- "$source_dir/tests/smoke.qml" "$smoke_dir/shell.qml"
+env=(OPORT_BIN="$source_dir/target/release/oport")
+if [[ ${1:-} == --render ]]; then
+  mkdir -p "$smoke_dir/Ui" "$source_dir/tests/output"
+  for file in "$omarchy_path"/shell/Ui/*; do ln -s -- "$file" "$smoke_dir/Ui/"; done
+  ln -sf -- "$source_dir/tests/shim/KeyboardPanel.qml" "$smoke_dir/Ui/KeyboardPanel.qml"
+  env+=(OPORT_SMOKE_OUTPUT="$source_dir/tests/output" XDG_RUNTIME_DIR="$runtime"
+        QT_QPA_PLATFORM=offscreen QT_QPA_PLATFORMTHEME=generic QT_QUICK_BACKEND=software)
+else
+  ln -s -- "$omarchy_path/shell/Ui" "$smoke_dir/Ui"
+  env+=(QT_QPA_PLATFORM=wayland)
+fi
+env "${env[@]}" timeout 30s quickshell -p "$smoke_dir" > "$smoke_dir/output.log" 2>&1 || {
+  cat "$smoke_dir/output.log"
+  exit 1
+}
+if grep -E 'FAIL:|TypeError|ReferenceError|Error loading configuration|Cannot assign|Unable to assign|is not defined|unavailable' "$smoke_dir/output.log"; then
+  cat "$smoke_dir/output.log"
+  exit 1
+fi
+grep 'PASS:' "$smoke_dir/output.log" || {
+  cat "$smoke_dir/output.log"
+  exit 1
+}
