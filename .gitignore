@@ -1,2 +1,6 @@
 /target/
 /tests/output/
+/packaging/arch/src/
+/packaging/arch/pkg/
+/packaging/arch/*.tar.gz
+/packaging/arch/*.pkg.tar.*

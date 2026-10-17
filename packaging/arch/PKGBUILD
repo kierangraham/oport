@@ -1,0 +1,46 @@
+# Maintainer: Kieran Graham <me@kierangraham.com>
+#
+# Installs the oport CLI only. Omarchy manages the bar plugin itself:
+#   omarchy plugin add https://github.com/kierangraham/oport --enable
+
+pkgname=oport
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='Dev servers on local ports: a CLI, TUI and data source for the oport Omarchy plugin'
+arch=('x86_64' 'aarch64')
+url='https://github.com/kierangraham/oport'
+license=('MIT')
+depends=('gcc-libs' 'glibc')
+makedepends=('cargo')
+optdepends=('xdg-utils: oport open')
+source=("$pkgname-$pkgver.tar.gz::https://github.com/kierangraham/oport/archive/refs/tags/v$pkgver.tar.gz")
+# Replace SKIP with the real checksum once the v0.1.0 tag is published:
+#   updpkgsums
+sha256sums=('SKIP')
+
+prepare() {
+  cd "$pkgname-$pkgver"
+  export RUSTUP_TOOLCHAIN=stable
+  cargo fetch --locked --target "$(rustc -vV | sed -n 's/host: //p')"
+}
+
+build() {
+  cd "$pkgname-$pkgver"
+  export RUSTUP_TOOLCHAIN=stable
+  export CARGO_TARGET_DIR=target
+  make build CARGO_FLAGS=--frozen
+}
+
+check() {
+  cd "$pkgname-$pkgver"
+  export RUSTUP_TOOLCHAIN=stable
+  make test CARGO_FLAGS=--frozen
+}
+
+package() {
+  cd "$pkgname-$pkgver"
+  export RUSTUP_TOOLCHAIN=stable
+  make install DESTDIR="$pkgdir" PREFIX=/usr CARGO_FLAGS=--frozen
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
+}

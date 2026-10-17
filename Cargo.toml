@@ -5,6 +5,12 @@ edition = "2024"
 rust-version = "1.95"
 description = "Dev servers on local ports: a CLI, TUI and data source for the oport Omarchy plugin"
 license = "MIT"
+repository = "https://github.com/kierangraham/oport"
+homepage = "https://kierangraham.com"
+readme = "README.md"
+keywords = ["omarchy", "ports", "dev-server", "tui", "linux"]
+categories = ["command-line-utilities", "development-tools"]
+publish = false
 
 [dependencies]
 crossterm = "0.29"

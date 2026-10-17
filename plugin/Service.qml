@@ -17,7 +17,11 @@ Item {
   readonly property var servers: snapshot.servers
   readonly property int leakCount: servers.filter(function(s) { return !!s.leak }).length
   readonly property string homeDir: Quickshell.env("HOME") || ""
-  readonly property string binary: Quickshell.env("OPORT_BIN") || homeDir + "/.local/bin/oport"
+  // Runs the oport CLI from OPORT_BIN, then the places `make install`,
+  // `cargo install` and the Arch package put it, then PATH.
+  readonly property var launcher: ["sh", "-c",
+    'b=${OPORT_BIN:-}; for c in "$HOME/.local/bin/oport" "$HOME/.cargo/bin/oport" /usr/local/bin/oport /usr/bin/oport; do '
+    + '[ -z "$b" ] && [ -x "$c" ] && b=$c; done; exec "${b:-oport}" "$@"', "oport"]
 
   function ingest(line) {
     try {
@@ -31,7 +35,7 @@ Item {
     }
   }
 
-  function run(args) { Util.execArgv([binary].concat(args)) }
+  function run(args) { Util.execArgv(launcher.concat(args)) }
   function stop(server) { run(["stop", server.id, "--force"]) }
   function stopMany(list) { if (list.length) run(["stop", "--force"].concat(list.map(function(s) { return s.id }))) }
   function restart(server) { run(["restart", server.id, "--force"]) }
@@ -56,7 +60,7 @@ Item {
   }
   Process {
     id: scanner
-    command: [root.binary, "watch"]
+    command: root.launcher.concat(["watch"])
     running: true
     stdout: SplitParser { onRead: function(data) { root.ingest(data) } }
     stderr: SplitParser { onRead: function(data) { root.diagnostics = String(data).slice(0, 240) } }
@@ -65,7 +69,7 @@ Item {
       retry.restart()
     }
     onRunningChanged: if (!running && root.receivedAt === 0) {
-      root.error = "Waiting for " + root.binary + "…"
+      root.error = "Waiting for the oport CLI…"
       retry.restart()
     }
   }
