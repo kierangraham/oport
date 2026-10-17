@@ -14,9 +14,7 @@ depends=('gcc-libs' 'glibc')
 makedepends=('cargo')
 optdepends=('xdg-utils: oport open')
 source=("$pkgname-$pkgver.tar.gz::https://github.com/kierangraham/oport/archive/refs/tags/v$pkgver.tar.gz")
-# Replace SKIP with the real checksum once the v0.1.0 tag is published:
-#   updpkgsums
-sha256sums=('SKIP')
+sha256sums=('a904aca40b171b5b431f2ba4ebe15056265bfbb45c2f8ded4dd7a6752732a01f')
 
 prepare() {
   cd "$pkgname-$pkgver"
